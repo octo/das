@@ -5,35 +5,44 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
-	"errors"
 	"fmt"
 	"image/color"
 	"log"
 	"time"
 
-	"github.com/zserge/hid"
-	"github.com/octo/das/4q"
+	"github.com/octo/das/dkb4q"
 )
 
+var colors = []color.NRGBA{
+	{R: 66, G: 133, B: 244},
+	{R: 219, G: 68, B: 55},
+	{R: 244, G: 160, B: 0},
+	{R: 15, G: 157, B: 88},
+}
+
 func main() {
-	kb, err := 4q.Open()
+	kb, err := dkb4q.Open()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer kb.Close()
 
-	for i := 0; i < q4.MaxLEDID; i++ {
-		err := kb.State(4q.KeyState{
+	for i := 0; i < dkb4q.MaxLEDID; i++ {
+		c := colors[i%len(colors)]
+
+		fmt.Println("=== LED", i, "===")
+		err := kb.State(dkb4q.KeyState{
 			LEDID:         uint8(i),
-			PassiveEffect: SetColor,
-			PassiveColor:  color.NRGBA{R: 0x01, G: 0x02, B: 0xF3},
-			ActiveEffect:  SetColorActive,
+			PassiveEffect: dkb4q.SetColor,
+			PassiveColor:  c,
+			ActiveEffect:  dkb4q.SetColorActive,
 			ActiveColor:   color.NRGBA{R: 0xF4, G: 0x05, B: 0x06},
 		})
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		fmt.Println("")
+		time.Sleep(time.Second)
 	}
 }
