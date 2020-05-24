@@ -1,4 +1,4 @@
-package main
+package dkb4q
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ var packets = [][]byte{
 	{0xEA, 0x03, 0x78, 0x0A, 0x9B, 0x00, 0x00},
 }
 
-func (kb *Keyboard) send(s KeyState) error {
+func (kb *Keyboard) State(s KeyState) error {
 	buffer := make([]byte, 14, 14)
 
 	// msg 0
@@ -92,12 +92,4 @@ func (kb *Keyboard) send(s KeyState) error {
 	// should return "" (zero bytes)
 	_, err = kb.dev.GetReport(1)
 	return err
-}
-
-func xorAll(data []byte) byte {
-	var ret byte
-	for _, d := range data {
-		ret ^= d
-	}
-	return ret
 }
