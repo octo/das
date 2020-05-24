@@ -4,92 +4,18 @@
 // support "Das Keyboard 4Q", because that's the one I happen to own.
 //
 // For the most part, this is a re-implementation of diefarbe/node-lib.
-package main
+package dkb4q
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"image/color"
-	"log"
-	"time"
 
 	"github.com/zserge/hid"
 )
 
-func main() {
-	kb, err := Open()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = kb.send(KeyState{
-		LEDID:         6,
-		PassiveEffect: SetColor,
-		PassiveColor:  color.NRGBA{R: 0x09, G: 0x08, B: 0xF1},
-		ActiveEffect:  SetColorActive,
-		ActiveColor:   color.NRGBA{R: 0xF2, G: 0x07, B: 0x13},
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	return
-
-	// // INIT? .. looks like it reads a serial number of so.
-	// err = kb.setReport([]byte{0xEA, 0x03, 0xB0, 0x59, 0x00, 0x00, 0x00})
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// data, err := kb.dev.GetReport(1)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Printf("<- GetReport() = %#x\n", data)
-	// fmt.Println("verifyChecksum():", verifyChecksum(data[:8]))
-	// return
-
-	err = kb.setReport([]byte{0xEA, 0x0B, 0x78, 0x03, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x9F, 0x00})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	data, err := kb.dev.GetReport(1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("<- GetReport() = %#x\n", data)
-	fmt.Println("verifyChecksum():", verifyChecksum(data[:8]))
-
-	err = kb.setReport([]byte{0xEA, 0x08, 0x78, 0x08, 0x05, 0x01, 0x60, 0x61, 0x62, 0xF5, 0x00, 0x00, 0x00, 0x00})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = kb.setReport([]byte{0xEA, 0x0B, 0x78, 0x04, 0x05, 0x1E, 0xFE, 0x01, 0x02, 0x07, 0xD0, 0x00, 0xAC, 0x00})
-	//                                                LED   BLINK R     G     B                       CHK
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	data, err = kb.dev.GetReport(1) // this is what fails currently.
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("<- GetReport() = %#x\n", data)
-
-	err = kb.setReport([]byte{0xEA, 0x03, 0x78, 0x0A, 0x9B, 0x00, 0x00})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	data, err = kb.dev.GetReport(1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("<- GetReport() = %v\n", data)
-}
+const (
+	MaxLEDID = 124
+)
 
 func (kb *Keyboard) setReport(data []byte) error {
 	if len(data) == 14 {
