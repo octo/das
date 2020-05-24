@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/octo/retry"
 )
@@ -109,22 +108,21 @@ var errNoReport = errors.New("no report available")
 func getReport(hid reportGetter) ([]byte, error) {
 	var ret []byte
 	cb := func(_ context.Context) error {
+		fmt.Printf("<- GetReport(1) = ")
 		data, err := hid.GetReport(1)
 		if err != nil {
+			fmt.Println(err)
 			return retry.Abort(err)
 		}
 		if isZero(data) {
+			fmt.Println(errNoReport)
 			return errNoReport
 		}
+		fmt.Printf("%#v\n", data)
 		ret = data
 		return nil
 	}
 
-	err := retry.Do(context.TODO(), cb, retry.Attempts(19), retry.ExpBackoff{
-		Base:   time.Millisecond,
-		Max:    5 * time.Millisecond,
-		Factor: 1.1,
-	}, retry.WithoutJitter)
-
+	err := retry.Do(context.TODO(), cb)
 	return ret, err
 }
