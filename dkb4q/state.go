@@ -24,72 +24,51 @@ const (
 	ColorCycle            = 0x14
 )
 
-var packets = [][]byte{
-	{0xEA, 0x0B, 0x78, 0x03, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x9F, 0x00},
-	{0xEA, 0x08, 0x78, 0x08, 0x05, 0x01, 0x60, 0x61, 0x62, 0xF5, 0x00, 0x00, 0x00, 0x00},
-	{0xEA, 0x0B, 0x78, 0x04, 0x05, 0x1E, 0xFE, 0x01, 0x02, 0x07, 0xD0, 0x00, 0xAC, 0x00},
-	{0xEA, 0x03, 0x78, 0x0A, 0x9B, 0x00, 0x00},
-}
-
 func (kb *Keyboard) State(s KeyState) error {
-	buffer := make([]byte, 14, 14)
-
-	// msg 0
-	copy(buffer, packets[0])
-	buffer[4] = s.LEDID
-	buffer[12] = xorAll(buffer[:12])
-	if err := kb.setReport(buffer); err != nil {
+	msg0 := encodeReport(0xEA, []byte{0x78, 0x03, s.LEDID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+	if err := kb.setReport(msg0); err != nil {
 		return err
 	}
 
-	// should return "ED 03 78 00 96"
-	ret, err := kb.dev.GetReport(1)
+	res0, err := getReports(kb.dev)
 	if err != nil {
 		return err
 	}
-	if err := verifyChecksum(ret); err != nil {
-		fmt.Printf("ret=%+v, err=%v\n", ret, err)
-	}
-
-	// msg 1
-	copy(buffer, packets[1])
-	buffer[4] = s.LEDID
-	buffer[5] = byte(s.PassiveEffect)
-	buffer[6] = s.PassiveColor.R
-	buffer[7] = s.PassiveColor.G
-	buffer[8] = s.PassiveColor.B
-	buffer[9] = xorAll(buffer[:9])
-	if err := kb.setReport(buffer); err != nil {
-		return err
-	}
-
-	// msg 2
-	copy(buffer, packets[2])
-	buffer[4] = s.LEDID
-	buffer[5] = byte(s.ActiveEffect)
-	buffer[6] = s.ActiveColor.R
-	buffer[7] = s.ActiveColor.G
-	buffer[8] = s.ActiveColor.B
-	buffer[12] = xorAll(buffer[:12])
-	if err := kb.setReport(buffer); err != nil {
-		return err
-	}
-
 	// should return "ED 03 78 00 96"
-	ret, err = kb.dev.GetReport(1)
+	fmt.Printf("response 0 = %#v\n", res0)
+
+	msg1 := encodeReport(0xEA, []byte{0x78, 0x08, s.LEDID, byte(s.PassiveEffect),
+		s.PassiveColor.R, s.PassiveColor.G, s.PassiveColor.B})
+	if err := kb.setReport(msg1); err != nil {
+		return err
+	}
+
+	msg2 := []byte{0x78, 0x04, s.LEDID, byte(s.ActiveEffect),
+		s.ActiveColor.R, s.ActiveColor.G, s.ActiveColor.B,
+		0x07, 0xD0, 0x00} // TODO(octo): appears to be effect specific
+	msg2 = encodeReport(0xEA, msg2)
+	if err := kb.setReport(msg2); err != nil {
+		return err
+	}
+
+	res1, err := getReports(kb.dev)
 	if err != nil {
 		return err
 	}
-	if err := verifyChecksum(ret); err != nil {
-		fmt.Printf("ret=%+v, err=%v\n", ret, err)
-	}
+	// should return "ED 03 78 00 96"
+	fmt.Printf("response 1 = %#v\n", res1)
 
-	// msg 2
-	if err := kb.setReport(packets[3]); err != nil {
+	msg3 := encodeReport(0xEA, []byte{0x78, 0x0A})
+	if err := kb.setReport(msg3); err != nil {
 		return err
 	}
 
-	// should return "" (zero bytes)
-	_, err = kb.dev.GetReport(1)
-	return err
+	res2, err := getReports(kb.dev)
+	if err != nil {
+		return err
+	}
+	// should return "ED 03 78 00 96"
+	fmt.Printf("response 2 = %#v\n", res2)
+
+	return nil
 }
