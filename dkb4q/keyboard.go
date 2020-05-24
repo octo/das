@@ -7,9 +7,11 @@
 package dkb4q
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"github.com/octo/retry"
 	"github.com/zserge/hid"
 )
 
@@ -32,8 +34,10 @@ func (kb *Keyboard) setReport(data []byte) error {
 		return fmt.Errorf("len(data) = %d, want 7", len(data))
 	}
 
-	fmt.Printf("-> SetReport(1, %x)\n", append([]byte{0x01}, data...))
-	return kb.dev.SetReport(1, append([]byte{0x01}, data...))
+	return retry.Do(context.TODO(), func(_ context.Context) error {
+		fmt.Printf("-> SetReport(1, %#v)\n", append([]byte{0x01}, data...))
+		return kb.dev.SetReport(1, append([]byte{0x01}, data...))
+	})
 }
 
 func calculateChecksum(data []byte) (got, want byte) {
