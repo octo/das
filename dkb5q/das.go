@@ -1,7 +1,4 @@
-// Package das implements the low-level protocol of Das Keyboard.
-//
-// This is a very early draft and very much work in progress. The goal is to
-// support "Das Keyboard 4Q", because that's the one I happen to own.
+// Package das implements the low-level protocol of Das Keyboard 5Q.
 //
 // For the most part, this is a re-implementation of diefarbe/node-lib.
 package das
