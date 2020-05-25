@@ -19,25 +19,23 @@ const (
 	MaxLEDID = 124
 )
 
-func (kb *Keyboard) setReport(data []byte) error {
-	if len(data) == 14 {
-		if err := verifyChecksum(data); err != nil {
-			return err
-		}
-
-		if err := kb.setReport(data[:7]); err != nil {
-			return err
-		}
-		data = data[7:]
-	}
-	if len(data) != 7 {
-		return fmt.Errorf("len(data) = %d, want 7", len(data))
+func (kb *Keyboard) setReport(ctx context.Context, data []byte) error {
+	if len(data)%7 != 0 {
+		return fmt.Errorf("invalid message length %d; use encodeReport to generate a correct encoding")
 	}
 
-	return retry.Do(context.TODO(), func(_ context.Context) error {
-		fmt.Printf("-> SetReport(1, %#v)\n", append([]byte{0x01}, data...))
-		return kb.dev.SetReport(1, append([]byte{0x01}, data...))
-	})
+	for i := 0; i < len(data); i += 7 {
+		payload := append([]byte{0x01}, data[i:i+7]...)
+		err := retry.Do(ctx, func(_ context.Context) error {
+			fmt.Printf("-> SetReport(1, %#v)\n", payload)
+			return kb.dev.SetReport(1, payload)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func calculateChecksum(data []byte) (got, want byte) {

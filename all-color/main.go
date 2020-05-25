@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"image/color"
 	"log"
 
@@ -19,6 +20,8 @@ var colors = []color.NRGBA{
 }
 
 func main() {
+	ctx := context.Background()
+
 	kb, err := dkb4q.Open()
 	if err != nil {
 		log.Fatal(err)
@@ -38,7 +41,7 @@ func main() {
 		})
 	}
 
-	if err := kb.State(states...); err != nil {
+	if err := kb.State(ctx, states...); err != nil {
 		log.Fatal(err)
 	}
 }

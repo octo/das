@@ -48,7 +48,7 @@ type reportGetter interface {
 	GetReport(reportID int) ([]byte, error)
 }
 
-func getReports(hid reportGetter) ([][]byte, error) {
+func getReports(ctx context.Context, hid reportGetter) ([][]byte, error) {
 	var (
 		buf     bytes.Buffer
 		reports [][]byte
@@ -56,7 +56,7 @@ func getReports(hid reportGetter) ([][]byte, error) {
 
 	for {
 		for buf.Len() < 2 {
-			data, err := getReport(hid)
+			data, err := getReport(ctx, hid)
 			if err != nil {
 				return nil, err
 			}
@@ -77,7 +77,7 @@ func getReports(hid reportGetter) ([][]byte, error) {
 		}
 
 		for buf.Len() < int(reportLen) {
-			data, err := getReport(hid)
+			data, err := getReport(ctx, hid)
 			if err != nil {
 				return nil, err
 			}
@@ -105,7 +105,7 @@ func getReports(hid reportGetter) ([][]byte, error) {
 
 var errNoReport = errors.New("no report available")
 
-func getReport(hid reportGetter) ([]byte, error) {
+func getReport(ctx context.Context, hid reportGetter) ([]byte, error) {
 	var ret []byte
 	cb := func(_ context.Context) error {
 		fmt.Printf("<- GetReport(1) = ")
@@ -123,6 +123,6 @@ func getReport(hid reportGetter) ([]byte, error) {
 		return nil
 	}
 
-	err := retry.Do(context.TODO(), cb)
+	err := retry.Do(ctx, cb)
 	return ret, err
 }
