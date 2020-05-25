@@ -5,10 +5,8 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
 	"log"
-	"time"
 
 	"github.com/octo/das/dkb4q"
 )
@@ -27,22 +25,20 @@ func main() {
 	}
 	defer kb.Close()
 
+	var states []dkb4q.KeyState
 	for i := 0; i < dkb4q.MaxLEDID; i++ {
 		c := colors[i%len(colors)]
 
-		fmt.Println("=== LED", i, "===")
-		err := kb.State(dkb4q.KeyState{
+		states = append(states, dkb4q.KeyState{
 			LEDID:         uint8(i),
 			PassiveEffect: dkb4q.SetColor,
 			PassiveColor:  c,
 			ActiveEffect:  dkb4q.SetColorActive,
-			ActiveColor:   color.NRGBA{R: 0xF4, G: 0x05, B: 0x06},
+			ActiveColor:   color.NRGBA{R: 0xFF - c.R, G: 0xFF - c.G, B: 0xFF - c.B},
 		})
-		if err != nil {
-			log.Fatal(err)
-		}
+	}
 
-		fmt.Println("")
-		time.Sleep(time.Second)
+	if err := kb.State(states...); err != nil {
+		log.Fatal(err)
 	}
 }

@@ -1,6 +1,7 @@
 package dkb4q
 
 import (
+	"errors"
 	"fmt"
 	"image/color"
 )
@@ -24,14 +25,24 @@ const (
 	ColorCycle            = 0x14
 )
 
-func (kb *Keyboard) State(s KeyState) error {
+func (kb *Keyboard) State(states ...KeyState) error {
+	for _, s := range states {
+		if err := kb.stageState(s); err != nil {
+			return err
+		}
+	}
+
+	return kb.commitState()
+}
+
+func (kb *Keyboard) stageState(s KeyState) error {
 	msg0 := encodeReport(0xEA, []byte{0x78, 0x03, s.LEDID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 	if err := kb.setReport(msg0); err != nil {
 		return err
 	}
 
 	res0, err := getReports(kb.dev)
-	if err != nil {
+	if err != nil && !errors.Is(err, errNoReport) {
 		return err
 	}
 	// should return "ED 03 78 00 96"
@@ -52,12 +63,16 @@ func (kb *Keyboard) State(s KeyState) error {
 	}
 
 	res1, err := getReports(kb.dev)
-	if err != nil {
+	if err != nil && !errors.Is(err, errNoReport) {
 		return err
 	}
 	// should return "ED 03 78 00 96"
 	fmt.Printf("response 1 = %#v\n", res1)
 
+	return nil
+}
+
+func (kb *Keyboard) commitState() error {
 	msg3 := encodeReport(0xEA, []byte{0x78, 0x0A})
 	if err := kb.setReport(msg3); err != nil {
 		return err
