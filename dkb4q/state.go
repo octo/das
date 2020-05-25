@@ -113,6 +113,23 @@ func SetColorActive(opts ...ActiveEffectOption) ActiveEffect {
 	return ae
 }
 
+// BlinkActive lets keys blink when pressed. Number of on/off cycles and the
+// cycle duration can be controlled with CycleCount and CycleDuration.
+func BlinkActive(opts ...ActiveEffectOption) ActiveEffect {
+	ae := ActiveEffect{
+		id:   0x1F,
+		arg0: 0x01,
+		arg1: 0xF4,
+		arg2: 0x03,
+	}
+
+	for _, opt := range opts {
+		opt(&ae)
+	}
+
+	return ae
+}
+
 func EffectDuration(d time.Duration) ActiveEffectOption {
 	return func(ae *ActiveEffect) {
 		if ae.id != 0x1E {
@@ -127,5 +144,36 @@ func EffectDuration(d time.Duration) ActiveEffectOption {
 		}
 
 		ae.arg0 = byte(value)
+	}
+}
+
+// CycleCount sets how often a key blinks with the "BlinkActive" effect.
+func CycleCount(c uint8) ActiveEffectOption {
+	return func(ae *ActiveEffect) {
+		if ae.id != 0x1F {
+			return
+		}
+		ae.arg2 = byte(c)
+	}
+}
+
+// CycleCount sets how long each on/off cycle of the "BlinkActive" effect is. Defaults to 1.05 seconds.
+func CycleDuration(d time.Duration) ActiveEffectOption {
+	return func(ae *ActiveEffect) {
+		if ae.id != 0x1F {
+			return
+		}
+
+		// the default value 0x01F4 (500) translates into a cycle time of 1.05 seconds.
+		const precision = (1050 * time.Millisecond) / 500
+
+		d = d.Round(precision)
+		value := uint(d / precision)
+		if value < 1 || value > 0xffff {
+			return
+		}
+
+		ae.arg0 = byte((value >> 8) & 0x00ff)
+		ae.arg1 = byte(value & 0x00FF)
 	}
 }
