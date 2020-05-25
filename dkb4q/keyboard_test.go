@@ -65,32 +65,35 @@ func TestGetReports(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		var (
-			ctx = context.Background()
-			hid fake.HID
-		)
+		t.Run(tc.title, func(t *testing.T) {
+			var (
+				ctx = context.Background()
+				hid fake.HID
+			)
 
-		for _, res := range tc.responses {
-			hid.WantGetReport = append(hid.WantGetReport, fake.Report{
-				ID:   1,
-				Data: res,
-			})
-		}
-		kb := &Keyboard{
-			dev: &hid,
-		}
+			for _, res := range tc.responses {
+				hid.WantGetReport = append(hid.WantGetReport, fake.Report{
+					ID:   1,
+					Data: res,
+				})
+			}
+			kb := &Keyboard{
+				dev: &hid,
+			}
+			defer kb.Close()
 
-		got, err := kb.getReports(ctx)
-		if gotErr := err != nil; gotErr != tc.wantErr {
-			t.Errorf("getReports() = %v, want error %v", err, tc.wantErr)
-		}
-		if tc.wantErr {
-			continue
-		}
+			got, err := kb.getReports(ctx)
+			if gotErr := err != nil; gotErr != tc.wantErr {
+				t.Errorf("getReports() = %v, want error %v", err, tc.wantErr)
+			}
+			if tc.wantErr {
+				return
+			}
 
-		if diff := cmp.Diff(tc.want, got); diff != "" {
-			t.Errorf("getReports() differs (+got/-want):\n%s", diff)
-		}
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Errorf("getReports() differs (+got/-want):\n%s", diff)
+			}
+		})
 	}
 }
 
