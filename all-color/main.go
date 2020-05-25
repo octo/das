@@ -36,7 +36,7 @@ func main() {
 			LEDID:         uint8(i),
 			PassiveEffect: dkb4q.SetColor,
 			PassiveColor:  c,
-			ActiveEffect:  dkb4q.SetColorActive,
+			ActiveEffect:  dkb4q.SetColorActive(),
 			ActiveColor:   color.NRGBA{R: 0xFF - c.R, G: 0xFF - c.G, B: 0xFF - c.B},
 		})
 	}
