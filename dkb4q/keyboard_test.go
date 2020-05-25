@@ -2,7 +2,6 @@ package dkb4q
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -95,22 +94,4 @@ func TestGetReports(t *testing.T) {
 			}
 		})
 	}
-}
-
-type fakeReportGetter struct {
-	responses [][]byte
-}
-
-func (r *fakeReportGetter) GetReport(reportID int) ([]byte, error) {
-	if reportID != 1 {
-		return nil, fmt.Errorf("reportID: got %d, want 1", reportID)
-	}
-
-	if len(r.responses) == 0 {
-		return nil, fmt.Errorf("unexpected GetReport call")
-	}
-
-	var res []byte
-	res, r.responses = r.responses[0], r.responses[1:]
-	return res, nil
 }
