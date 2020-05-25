@@ -2,8 +2,6 @@
 //
 // This is a very early draft and very much work in progress. The goal is to
 // support "Das Keyboard 4Q", because that's the one I happen to own.
-//
-// For the most part, this is a re-implementation of diefarbe/node-lib.
 package dkb4q
 
 import (
