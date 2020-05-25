@@ -68,7 +68,7 @@ func Open() (Keyboard, error) {
 		if lastErr != nil {
 			return Keyboard{}, lastErr
 		}
-		return Keyboard{}, fmt.Errorf("no DasKeyboard device found")
+		return Keyboard{}, ErrNotFound
 	}
 
 	kb := Keyboard{
