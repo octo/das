@@ -42,7 +42,7 @@ func (kb *Keyboard) stageState(ctx context.Context, s KeyState) error {
 		return err
 	}
 
-	res0, err := getReports(ctx, kb.dev)
+	res0, err := kb.getReports(ctx)
 	if err != nil && !errors.Is(err, errNoReport) {
 		return err
 	}
@@ -63,7 +63,7 @@ func (kb *Keyboard) stageState(ctx context.Context, s KeyState) error {
 		return err
 	}
 
-	res1, err := getReports(ctx, kb.dev)
+	res1, err := kb.getReports(ctx)
 	if err != nil && !errors.Is(err, errNoReport) {
 		return err
 	}
@@ -79,7 +79,7 @@ func (kb *Keyboard) commitState(ctx context.Context) error {
 		return err
 	}
 
-	res2, err := getReports(ctx, kb.dev)
+	res2, err := kb.getReports(ctx)
 	if err != nil {
 		return err
 	}
