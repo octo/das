@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/octo/retry"
 )
 
 type Report struct {
@@ -24,8 +25,8 @@ func (d *HID) Close() {
 }
 
 var (
-	errClosed     = errors.New("device is closed")
-	errUnexpected = errors.New("unexpected call")
+	errClosed     = retry.Abort(errors.New("device is closed"))
+	errUnexpected = retry.Abort(errors.New("unexpected call"))
 )
 
 func (d *HID) SetReport(id int, data []byte) error {
@@ -45,7 +46,7 @@ func (d *HID) SetReport(id int, data []byte) error {
 	want, d.WantSetReport = d.WantSetReport[0], d.WantSetReport[1:]
 
 	if diff := cmp.Diff(want, got); diff != "" {
-		return fmt.Errorf("report differs (+got/-want):\n%s", diff)
+		return retry.Abort(fmt.Errorf("report differs (+got/-want):\n%s", diff))
 	}
 
 	return nil
@@ -63,7 +64,7 @@ func (d *HID) GetReport(id int) ([]byte, error) {
 	res, d.WantGetReport = d.WantGetReport[0], d.WantGetReport[1:]
 
 	if id != res.ID {
-		return nil, fmt.Errorf("report ID = %d, want %d", id, res.ID)
+		return nil, retry.Abort(fmt.Errorf("report ID = %d, want %d", id, res.ID))
 	}
 
 	return res.Data, nil

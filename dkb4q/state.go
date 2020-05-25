@@ -39,7 +39,7 @@ func (kb *Keyboard) State(ctx context.Context, states ...KeyState) error {
 func (kb *Keyboard) stageState(ctx context.Context, s KeyState) error {
 	msg0 := encodeReport(0xEA, []byte{0x78, 0x03, s.LEDID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 	if err := kb.setReport(ctx, msg0); err != nil {
-		return err
+		return fmt.Errorf("setReport(msg0 = %#v) = %w", msg0, err)
 	}
 
 	res0, err := kb.getReports(ctx)
@@ -52,7 +52,7 @@ func (kb *Keyboard) stageState(ctx context.Context, s KeyState) error {
 	msg1 := encodeReport(0xEA, []byte{0x78, 0x08, s.LEDID, byte(s.PassiveEffect),
 		s.PassiveColor.R, s.PassiveColor.G, s.PassiveColor.B})
 	if err := kb.setReport(ctx, msg1); err != nil {
-		return err
+		return fmt.Errorf("setReport(msg1 = %#v) = %w", msg1, err)
 	}
 
 	msg2 := []byte{0x78, 0x04, s.LEDID, byte(s.ActiveEffect),
@@ -60,7 +60,7 @@ func (kb *Keyboard) stageState(ctx context.Context, s KeyState) error {
 		0x07, 0xD0, 0x00} // TODO(octo): appears to be effect specific
 	msg2 = encodeReport(0xEA, msg2)
 	if err := kb.setReport(ctx, msg2); err != nil {
-		return err
+		return fmt.Errorf("setReport(msg2 = %#v) = %w", msg2, err)
 	}
 
 	res1, err := kb.getReports(ctx)
