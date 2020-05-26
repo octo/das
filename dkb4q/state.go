@@ -117,9 +117,28 @@ func SetColorActive(opts ...ActiveEffectOption) ActiveEffect {
 // cycle duration can be controlled with CycleCount and CycleDuration.
 func BlinkActive(opts ...ActiveEffectOption) ActiveEffect {
 	ae := ActiveEffect{
-		id:   0x1F,
+		id:   byte(Blink),
 		arg0: 0x01,
 		arg1: 0xF4,
+		arg2: 0x03,
+	}
+
+	for _, opt := range opts {
+		opt(&ae)
+	}
+
+	return ae
+}
+
+// BreatheActive lets keys "breathe" – smoothly cycle through high/low
+// intensity – when pressed. Number of on/off cycles and the cycle duration can
+// be controlled with CycleCount and CycleDuration.
+func BreatheActive(opts ...ActiveEffectOption) ActiveEffect {
+	ae := ActiveEffect{
+		id: byte(Breathe),
+		// TODO(octo): arg0 and arg1 are not yet understood.
+		arg0: 0x03,
+		arg1: 0xE8,
 		arg2: 0x03,
 	}
 
@@ -147,20 +166,22 @@ func EffectDuration(d time.Duration) ActiveEffectOption {
 	}
 }
 
-// CycleCount sets how often a key blinks with the "BlinkActive" effect.
+// CycleCount sets how often a key blinks with the "BlinkActive" effect or
+// "breathes" with the "BreatheActive" effect.
 func CycleCount(c uint8) ActiveEffectOption {
 	return func(ae *ActiveEffect) {
-		if ae.id != 0x1F {
+		if ae.id != byte(Blink) && ae.id != byte(Breathe) {
 			return
 		}
 		ae.arg2 = byte(c)
 	}
 }
 
-// CycleCount sets how long each on/off cycle of the "BlinkActive" effect is. Defaults to 1.05 seconds.
+// CycleCount sets how long each on/off cycle of the "BlinkActive" effect is.
+// Defaults to 1.05 seconds.
 func CycleDuration(d time.Duration) ActiveEffectOption {
 	return func(ae *ActiveEffect) {
-		if ae.id != 0x1F {
+		if ae.id != byte(Blink) {
 			return
 		}
 
