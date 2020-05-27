@@ -12,19 +12,19 @@ import (
 func TestKeyboard_State(t *testing.T) {
 	cases := []struct {
 		title         string
-		states        []KeyState
+		states        []State
 		wantSetReport [][]byte
 		wantGetReport [][]byte
 		wantErr       bool
 	}{
 		{
 			title: "set_color and none",
-			states: []KeyState{
+			states: []State{
 				{
-					LEDID:         0x05,
-					PassiveEffect: SetColor,
-					PassiveColor:  color.NRGBA{R: 0xFB, G: 0x02, B: 0x03},
-					ActiveEffect:  None,
+					ID:           0x05,
+					IdleEffect:   SetColor,
+					IdleColor:    color.NRGBA{R: 0xFB, G: 0x02, B: 0x03},
+					ActiveEffect: None,
 				},
 			},
 			wantSetReport: [][]byte{
@@ -44,13 +44,13 @@ func TestKeyboard_State(t *testing.T) {
 		},
 		{
 			title: "set_color and set_color",
-			states: []KeyState{
+			states: []State{
 				{
-					LEDID:         0x05,
-					PassiveEffect: SetColor,
-					PassiveColor:  color.NRGBA{R: 0xFB, G: 0x02, B: 0x03},
-					ActiveEffect:  SetColorActive(EffectDuration(4 * time.Second)),
-					ActiveColor:   color.NRGBA{R: 0xFC, G: 0xFD, B: 0xFE},
+					ID:           0x05,
+					IdleEffect:   SetColor,
+					IdleColor:    color.NRGBA{R: 0xFB, G: 0x02, B: 0x03},
+					ActiveEffect: SetColorActive(EffectDuration(4 * time.Second)),
+					ActiveColor:  color.NRGBA{R: 0xFC, G: 0xFD, B: 0xFE},
 				},
 			},
 			wantSetReport: [][]byte{
@@ -70,13 +70,13 @@ func TestKeyboard_State(t *testing.T) {
 		},
 		{
 			title: "set_color and blink",
-			states: []KeyState{
+			states: []State{
 				{
-					LEDID:         0x05,
-					PassiveEffect: SetColor,
-					PassiveColor:  color.NRGBA{R: 0xFB, G: 0x02, B: 0x03},
-					ActiveEffect:  BlinkActive(CycleCount(2), CycleDuration(2*time.Second)),
-					ActiveColor:   color.NRGBA{R: 0xFC, G: 0xFD, B: 0xFE},
+					ID:           0x05,
+					IdleEffect:   SetColor,
+					IdleColor:    color.NRGBA{R: 0xFB, G: 0x02, B: 0x03},
+					ActiveEffect: BlinkActive(CycleCount(2), CycleDuration(2*time.Second)),
+					ActiveColor:  color.NRGBA{R: 0xFC, G: 0xFD, B: 0xFE},
 				},
 			},
 			wantSetReport: [][]byte{
@@ -121,9 +121,9 @@ func TestKeyboard_State(t *testing.T) {
 			}
 			defer kb.Close()
 
-			err := kb.State(ctx, tc.states...)
+			err := kb.SetState(ctx, tc.states...)
 			if gotErr := err != nil; gotErr != tc.wantErr {
-				t.Errorf("Keyboard.State() = %v, want error %v", err, tc.wantErr)
+				t.Errorf("Keyboard.SetState() = %v, want error %v", err, tc.wantErr)
 			}
 			if tc.wantErr {
 				return

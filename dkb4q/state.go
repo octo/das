@@ -8,15 +8,19 @@ import (
 	"time"
 )
 
-type KeyState struct {
-	LEDID         uint8
-	PassiveEffect PassiveEffect
-	PassiveColor  color.NRGBA
-	ActiveEffect  ActiveEffect
-	ActiveColor   color.NRGBA
+// State represents the (desired) state of one key. "Idle" refers to the
+// key's normal state, "active" to the keys state after is has been pressed.
+type State struct {
+	ID           uint8
+	IdleEffect   IdleEffect
+	IdleColor    color.NRGBA
+	ActiveEffect ActiveEffect
+	ActiveColor  color.NRGBA
 }
 
-func (kb *Keyboard) State(ctx context.Context, states ...KeyState) error {
+// SetState sets the state of one or more LEDs / keys. Passing many states in
+// one call is more efficient than calling SetState repeatedly.
+func (kb *Keyboard) SetState(ctx context.Context, states ...State) error {
 	for _, s := range states {
 		if err := kb.stageState(ctx, s); err != nil {
 			return err
@@ -26,8 +30,8 @@ func (kb *Keyboard) State(ctx context.Context, states ...KeyState) error {
 	return kb.commitState(ctx)
 }
 
-func (kb *Keyboard) stageState(ctx context.Context, s KeyState) error {
-	msg0 := encodeReport(0xEA, []byte{0x78, 0x03, s.LEDID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+func (kb *Keyboard) stageState(ctx context.Context, s State) error {
+	msg0 := encodeReport(0xEA, []byte{0x78, 0x03, s.ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 	if err := kb.setReport(ctx, msg0); err != nil {
 		return fmt.Errorf("setReport(msg0 = %#v) = %w", msg0, err)
 	}
@@ -39,13 +43,13 @@ func (kb *Keyboard) stageState(ctx context.Context, s KeyState) error {
 	// should return "ED 03 78 00 96"
 	fmt.Printf("response 0 = %#v\n", res0)
 
-	msg1 := encodeReport(0xEA, []byte{0x78, 0x08, s.LEDID, byte(s.PassiveEffect),
-		s.PassiveColor.R, s.PassiveColor.G, s.PassiveColor.B})
+	msg1 := encodeReport(0xEA, []byte{0x78, 0x08, s.ID, byte(s.IdleEffect),
+		s.IdleColor.R, s.IdleColor.G, s.IdleColor.B})
 	if err := kb.setReport(ctx, msg1); err != nil {
 		return fmt.Errorf("setReport(msg1 = %#v) = %w", msg1, err)
 	}
 
-	msg2 := []byte{0x78, 0x04, s.LEDID, s.ActiveEffect.id,
+	msg2 := []byte{0x78, 0x04, s.ID, s.ActiveEffect.id,
 		s.ActiveColor.R, s.ActiveColor.G, s.ActiveColor.B,
 		s.ActiveEffect.arg0,
 		s.ActiveEffect.arg1,
@@ -81,24 +85,36 @@ func (kb *Keyboard) commitState(ctx context.Context) error {
 	return nil
 }
 
-type PassiveEffect uint8
+// IdleEffect describes the key's behavior when it is inactive.
+type IdleEffect uint8
 
 const (
-	SetColor   PassiveEffect = 0x01
-	Breathe                  = 0x08
-	Blink                    = 0x1F
-	ColorCycle               = 0x14
+	// SetColor steadily lights the key in a single color.
+	SetColor IdleEffect = 0x01
+	// Breathe cycles the key's light through continuous phases of high/low intensity.
+	Breathe = 0x08
+	// Blink turns the key's light on/off at regular intervals.
+	Blink = 0x1F
+	// ColorCycle continuously cycles the key's light through the colors of the rainbow.
+	ColorCycle = 0x14
 )
 
+// ActiveEffect describes the key's behavior when it is activated, i.e. pressed.
 type ActiveEffect struct {
 	id               byte
 	arg0, arg1, arg2 byte
 }
 
-type ActiveEffectOption func(*ActiveEffect)
-
+// None disables an active effect, i.e. the key will not react to key presses.
 var None = ActiveEffect{}
 
+// ActiveEffectOption is an option to an active effect. Not all active effects
+// support all options – see the option's documentation for the effects they
+// support.
+type ActiveEffectOption func(*ActiveEffect)
+
+// SetColorActive lights the key in a single color. After some time (default:
+// 1.9 seconds) the key reverts to its idle state.
 func SetColorActive(opts ...ActiveEffectOption) ActiveEffect {
 	ae := ActiveEffect{
 		id:   0x1E,
@@ -149,6 +165,8 @@ func BreatheActive(opts ...ActiveEffectOption) ActiveEffect {
 	return ae
 }
 
+// EffectDuration sets how long the "SetColorActive" effect lasts before it
+// reverts to the idle state.
 func EffectDuration(d time.Duration) ActiveEffectOption {
 	return func(ae *ActiveEffect) {
 		if ae.id != 0x1E {
@@ -177,7 +195,7 @@ func CycleCount(c uint8) ActiveEffectOption {
 	}
 }
 
-// CycleCount sets how long each on/off cycle of the "BlinkActive" effect is.
+// CycleDuration sets how long each on/off cycle of the "BlinkActive" effect is.
 // Defaults to 1.05 seconds.
 func CycleDuration(d time.Duration) ActiveEffectOption {
 	return func(ae *ActiveEffect) {

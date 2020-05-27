@@ -28,20 +28,20 @@ func main() {
 	}
 	defer kb.Close()
 
-	var states []dkb4q.KeyState
-	for i := 0; i < dkb4q.MaxLEDID; i++ {
+	var states []dkb4q.State
+	for i := 0; i <= dkb4q.MaxID; i++ {
 		c := colors[i%len(colors)]
 
-		states = append(states, dkb4q.KeyState{
-			LEDID:         uint8(i),
-			PassiveEffect: dkb4q.SetColor,
-			PassiveColor:  c,
-			ActiveEffect:  dkb4q.SetColorActive(),
-			ActiveColor:   color.NRGBA{R: 0xFF - c.R, G: 0xFF - c.G, B: 0xFF - c.B},
+		states = append(states, dkb4q.State{
+			ID:           uint8(i),
+			IdleEffect:   dkb4q.SetColor,
+			IdleColor:    c,
+			ActiveEffect: dkb4q.SetColorActive(),
+			ActiveColor:  color.NRGBA{R: 0xFF - c.R, G: 0xFF - c.G, B: 0xFF - c.B},
 		})
 	}
 
-	if err := kb.State(ctx, states...); err != nil {
+	if err := kb.SetState(ctx, states...); err != nil {
 		log.Fatal(err)
 	}
 }

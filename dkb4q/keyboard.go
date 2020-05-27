@@ -1,4 +1,4 @@
-// Package das implements the low-level protocol of Das Keyboard.
+// Package dkb4q implements the low-level protocol of "Das Keyboard 4Q".
 //
 // This is a very early draft and very much work in progress. The goal is to
 // support "Das Keyboard 4Q", because that's the one I happen to own.
@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	MaxLEDID = 124
+	// MaxID is the maximum LED.
+	MaxID = 130
 )
 
 // Keyboard represents the connection to a keyboard.
@@ -27,13 +28,9 @@ type Keyboard struct {
 	}
 }
 
-// ErrNotFound is returned by Open if no matching device is found.
-var ErrNotFound = errors.New("no Das Keyboard device found")
-
 // Open scans USB devices for a "Das Keyboard" by looking for the vendor ID
 // 0x24F0. It returns a Keyboard talking to the first device successfully
-// opened. If no device could be opened, the last error is returned, or
-// ErrNotFound if no matching device was found.
+// opened. If no device could be opened, an error is returned.
 //
 // The connection to the keyboard should be closed with Close().
 func Open() (Keyboard, error) {
@@ -66,7 +63,7 @@ func Open() (Keyboard, error) {
 		if lastErr != nil {
 			return Keyboard{}, lastErr
 		}
-		return Keyboard{}, ErrNotFound
+		return Keyboard{}, errors.New("no Das Keyboard device found")
 	}
 
 	kb := Keyboard{
