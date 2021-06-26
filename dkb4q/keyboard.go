@@ -172,6 +172,16 @@ func (kb *Keyboard) getReport(ctx context.Context) ([]byte, error) {
 			fmt.Println(err)
 			return retry.Abort(err)
 		}
+
+		// the USB HID package may return 256 bytes. Sometimes a byte
+		// contains garbage, confusing the parser. Since in the vast
+		// majority of cases we expect a single ACK message, only
+		// consider ~3 response buffers.
+		// Context: https://github.com/octo/das/issues/2
+		if len(data) > 24 {
+			data = data[:24]
+		}
+
 		if isZero(data) {
 			fmt.Println(errNoReport)
 			return errNoReport
